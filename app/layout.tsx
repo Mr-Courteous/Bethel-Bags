@@ -3,6 +3,8 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import SessionProviderWrapper from "@/components/providers/SessionProviderWrapper";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: { default: "Bethel Empire – Premium Handcrafted Bags", template: "%s | Bethel Empire" },
   description: "Luxury handcrafted bags made with passion. Shop our collection or enrol in our bag-making courses.",
