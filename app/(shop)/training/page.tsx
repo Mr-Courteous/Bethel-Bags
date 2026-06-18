@@ -12,7 +12,7 @@ async function getCourses() {
   return prisma.course.findMany({ where: { published: true }, orderBy: { createdAt: "asc" } });
 }
 
-const SAMPLE_COURSES = [
+const SAMPLE_COURSES: any[] = [
   { id: "1", slug: "beginner-bag-making", title: "Beginner Bag Making Masterclass", description: "Learn the fundamentals of bag making from scratch. Covers materials, cutting, stitching, lining, and finishing. Perfect for complete beginners.", price: 25000, duration: "4 Weeks", level: "Beginner" },
   { id: "2", slug: "intermediate-leather-craft", title: "Intermediate Leather Craft", description: "Take your skills to the next level with leather-specific techniques including edge finishing, hardware installation, and pattern making.", price: 40000, duration: "6 Weeks", level: "Intermediate" },
   { id: "3", slug: "business-of-bags", title: "The Business of Bags", description: "Learn how to turn your bag-making skill into a profitable business — pricing, marketing, branding, and finding clients.", price: 30000, duration: "3 Weeks", level: "All Levels" },
@@ -93,7 +93,7 @@ export default async function TrainingPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {displayCourses.map((course, i) => (
+            {displayCourses.map((course: any, i: number) => (
               <div key={course.id} className="bg-white border border-gray-100 overflow-hidden hover:shadow-lg transition-all group flex flex-col">
                 <div className="h-3 bg-gold-gradient" />
                 <div className="p-8 flex flex-col flex-1">

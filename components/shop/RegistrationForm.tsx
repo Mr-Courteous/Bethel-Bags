@@ -1,12 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 interface Course { id: string; title: string; price: number; duration: string; level: string; slug: string; }
 
-export default function RegistrationForm({ courses }: { courses: Course[] }) {
+function RegistrationFormContent({ courses }: { courses: Course[] }) {
   const searchParams = useSearchParams();
   const preselect = searchParams.get("course");
 
@@ -115,3 +115,12 @@ export default function RegistrationForm({ courses }: { courses: Course[] }) {
     </>
   );
 }
+
+export default function RegistrationForm({ courses }: { courses: Course[] }) {
+  return (
+    <Suspense fallback={<div className="bg-white border border-gray-100 p-8">Loading form...</div>}>
+      <RegistrationFormContent courses={courses} />
+    </Suspense>
+  );
+}
+
