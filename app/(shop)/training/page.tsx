@@ -110,7 +110,7 @@ export default async function TrainingPage() {
                       <p className="text-xs text-empire-grey tracking-widest uppercase mb-1">Course Fee</p>
                       <p className="font-serif text-2xl text-empire-black font-bold">{formatPrice(course.price)}</p>
                     </div>
-                    <Link href={`/register?course=${course.slug}`} className="btn-gold text-xs py-2.5 px-5">
+                    <Link href={`/enrol?course=${course.slug}`} className="btn-gold text-xs py-2.5 px-5">
                       Enrol Now
                     </Link>
                   </div>
