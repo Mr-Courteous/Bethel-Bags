@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-dark: #A07C2A;
+    --gold-muted: #F5EDD6;
+    --empire-black: #0A0A0A;
+    --empire-charcoal: #1A1A1A;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    @apply bg-empire-light text-empire-black font-sans;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5 {
+    @apply font-serif;
+  }
+}
+
+@layer components {
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 
+           bg-gold-gradient text-empire-black font-semibold font-sans
+           rounded-none tracking-wide uppercase text-sm
+           transition-all duration-300 hover:opacity-90 hover:scale-[1.02]
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           border border-gold text-gold font-semibold font-sans
+           rounded-none tracking-wide uppercase text-sm
+           transition-all duration-300 hover:bg-gold hover:text-empire-black;
+  }
+
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-empire-black text-white font-semibold font-sans
+           rounded-none tracking-wide uppercase text-sm
+           transition-all duration-300 hover:bg-empire-charcoal;
+  }
+
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8 py-16 lg:py-24;
+  }
+
+  .container-max {
+    @apply max-w-7xl mx-auto;
+  }
+
+  .gold-line {
+    @apply h-px bg-gold-gradient;
+  }
+
+  .gold-shimmer {
+    background: linear-gradient(90deg, #A07C2A 0%, #E8C97A 30%, #C9A84C 50%, #E8C97A 70%, #A07C2A 100%);
+    background-size: 200% auto;
+    animation: shimmer 3s linear infinite;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 border border-gray-200 bg-white font-sans text-sm
+           focus:outline-none focus:border-gold transition-colors duration-200
+           placeholder:text-gray-400;
+  }
+
+  .card-product {
+    @apply bg-white border border-gray-100 overflow-hidden
+           transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+
+  .admin-sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 text-sm font-medium
+           transition-colors duration-200 hover:bg-gold/10 hover:text-gold;
+  }
+
+  .admin-sidebar-link.active {
+    @apply bg-gold/15 text-gold border-r-2 border-gold;
+  }
+}
+
+@keyframes shimmer {
+  to { background-position: 200% center; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
