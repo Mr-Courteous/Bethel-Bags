@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 
+export const dynamic = "force-dynamic";
+
 async function getOrCreateCart(userId: string | null, sessionId: string) {
   if (userId) {
     return prisma.cart.upsert({
