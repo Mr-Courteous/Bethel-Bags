@@ -145,6 +145,7 @@ model Order {
   status          OrderStatus @default(PENDING)
   paystackRef     String?     @unique
   paystackStatus  String?
+  receiptData     Json?
   notes           String?
   items           OrderItem[]
   createdAt       DateTime    @default(now())

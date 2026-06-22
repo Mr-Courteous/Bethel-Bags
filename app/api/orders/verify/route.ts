@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     await prisma.$transaction([
       prisma.order.update({
         where: { id: orderId },
-        data: { status: "PAID", paystackRef: reference, paystackStatus: "success" },
+        data: { status: "PAID", paystackRef: reference, paystackStatus: "success", receiptData: verification.data },
       }),
       ...order.items.map((item) =>
         prisma.product.update({
