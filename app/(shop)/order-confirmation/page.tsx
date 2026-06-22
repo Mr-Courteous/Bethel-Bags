@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import CartCountRefresher from "@/components/shop/CartCountRefresher";
 
 export const metadata: Metadata = { title: "Order Confirmed!" };
 
@@ -18,14 +19,18 @@ export default async function OrderConfirmationPage({
     include: { items: true },
   });
 
-  if (!order) notFound();
+  if (!order || order.status === "PENDING") notFound();
+
+  const receiptUrl = searchParams.ref
+    ? `https://paystack.com/receipt/${searchParams.ref}`
+    : null;
 
   return (
     <div>
+      <CartCountRefresher />
       <section className="bg-empire-black py-16 relative">
         <div className="absolute top-0 left-0 right-0 h-0.5 gold-shimmer" />
         <div className="container-max px-4 sm:px-6 lg:px-8 text-center">
-          {/* Success checkmark */}
           <div className="w-20 h-20 border-2 border-gold flex items-center justify-center mx-auto mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
@@ -35,34 +40,60 @@ export default async function OrderConfirmationPage({
           <h1 className="font-serif text-4xl lg:text-5xl text-white mb-3">Order Confirmed!</h1>
           <p className="text-gray-400 text-lg">Thank you for shopping with Bethel Empire.</p>
           <div className="mt-5 inline-block bg-gold/10 border border-gold/30 px-6 py-3">
-            <p className="text-xs text-gold tracking-widests uppercase mb-1">Order Number</p>
+            <p className="text-xs text-gold tracking-widest uppercase mb-1">Order Number</p>
             <p className="font-mono font-bold text-white text-xl tracking-wider">{order.orderNumber}</p>
           </div>
+          {receiptUrl && (
+            <div className="mt-4">
+              <a
+                href={receiptUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-gold hover:text-white border border-gold/40 hover:bg-gold/10 px-5 py-2 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Receipt
+              </a>
+            </div>
+          )}
         </div>
       </section>
 
       <section className="section-padding bg-empire-light">
         <div className="container-max px-4 sm:px-6 lg:px-8 max-w-3xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {/* Order details */}
             <div className="bg-white border border-gray-100 p-6">
               <h2 className="font-serif text-lg text-empire-black mb-4">Order Details</h2>
               <div className="space-y-3 text-sm">
                 {[
                   ["Order Number", order.orderNumber],
-                  ["Status", order.status],
+                  ["Status", "PAID"],
                   ["Date", new Date(order.createdAt).toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })],
                   ["Payment Ref", searchParams.ref || order.paystackRef || "—"],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-4">
                     <span className="text-empire-grey flex-shrink-0">{label}</span>
-                    <span className={`font-medium text-right ${label === "Status" ? "text-emerald-600 uppercase text-xs tracking-wide" : "text-empire-black"}`}>{value}</span>
+                    <span className={`font-medium text-right ${label === "Status" ? "text-emerald-600 uppercase text-xs tracking-wide" : "text-empire-black break-all max-w-[60%]"}`}>{value}</span>
                   </div>
                 ))}
               </div>
+              {receiptUrl && (
+                <a
+                  href={receiptUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-1 text-xs text-gold hover:underline"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  View Paystack Receipt
+                </a>
+              )}
             </div>
 
-            {/* Delivery details */}
             <div className="bg-white border border-gray-100 p-6">
               <h2 className="font-serif text-lg text-empire-black mb-4">Delivery To</h2>
               <div className="space-y-2 text-sm">
@@ -77,7 +108,6 @@ export default async function OrderConfirmationPage({
             </div>
           </div>
 
-          {/* Items */}
           <div className="bg-white border border-gray-100 p-6 mb-6">
             <h2 className="font-serif text-lg text-empire-black mb-5">Items Ordered</h2>
             <div className="space-y-4">
@@ -100,7 +130,6 @@ export default async function OrderConfirmationPage({
             </div>
           </div>
 
-          {/* What's next */}
           <div className="bg-empire-charcoal p-7 mb-8">
             <h3 className="font-serif text-xl text-white mb-5">What Happens Next?</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -118,7 +147,6 @@ export default async function OrderConfirmationPage({
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/products" className="btn-gold">Continue Shopping</Link>
             <Link href="/account/orders" className="btn-outline">View My Orders</Link>

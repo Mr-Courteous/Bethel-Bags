@@ -14,22 +14,6 @@ export default function CheckoutPage() {
             <p className="text-gold text-xs tracking-[0.4em] uppercase">Secure Checkout</p>
           </div>
           <h1 className="font-serif text-4xl text-white">Checkout</h1>
-          {/* Progress steps */}
-          <div className="flex items-center gap-2 mt-6">
-            {[
-              { step: "1", label: "Cart" },
-              { step: "2", label: "Details" },
-              { step: "3", label: "Payment" },
-            ].map((s, i) => (
-              <div key={s.step} className="flex items-center gap-2">
-                <div className={`w-7 h-7 flex items-center justify-center text-xs font-bold ${i < 2 ? "bg-gold text-empire-black" : "border border-gold/40 text-gold"}`}>
-                  {i < 1 ? "✓" : s.step}
-                </div>
-                <span className={`text-xs uppercase tracking-wide ${i < 2 ? "text-gold" : "text-gray-500"}`}>{s.label}</span>
-                {i < 2 && <div className="w-8 h-px bg-gold/30 mx-1" />}
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 

@@ -28,11 +28,15 @@ const SHIPPING_RATES: Record<string, number> = {
   "default": 3500,
 };
 
+type CheckoutStep = "details" | "paying" | "confirming" | "done";
+
 export default function CheckoutClient() {
   const router = useRouter();
   const [cart, setCart] = useState<{ items: CartItem[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [step, setStep] = useState<CheckoutStep>("details");
+  const [paystackRef, setPaystackRef] = useState("");
   const [form, setForm] = useState({
     customerName: "",
     customerEmail: "",
@@ -56,13 +60,23 @@ export default function CheckoutClient() {
   const subtotal = cart?.items.reduce((s, i) => s + i.product.price * i.quantity, 0) || 0;
   const total = subtotal + (form.state ? shippingFee : 0);
 
+  const steps = [
+    { key: "details", num: "1", label: "Details" },
+    { key: "paying", num: "2", label: "Payment" },
+    { key: "done", num: "3", label: "Confirmation" },
+  ];
+
+  function stepIndex(k: CheckoutStep) {
+    return steps.findIndex((s) => s.key === k);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!cart?.items.length) return toast.error("Your cart is empty");
     setSubmitting(true);
+    setStep("paying");
 
     try {
-      // 1. Create the order
       const orderRes = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,17 +85,17 @@ export default function CheckoutClient() {
       const orderData = await orderRes.json();
       if (!orderRes.ok) throw new Error(orderData.error || "Failed to create order");
 
-      const { order, paystackRef } = orderData;
+      const { order, paystackRef: ref } = orderData;
+      setPaystackRef(ref);
 
-      // 2. Open Paystack
       const PaystackPop = (window as any).PaystackPop;
       if (!PaystackPop) throw new Error("Payment system not loaded. Please refresh and try again.");
 
       const handler = PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: form.customerEmail,
-        amount: Math.round(total * 100), // convert to kobo
-        ref: paystackRef,
+        amount: Math.round(total * 100),
+        ref,
         currency: "NGN",
         label: `Bethel Empire – Order ${order.orderNumber}`,
         metadata: {
@@ -93,6 +107,7 @@ export default function CheckoutClient() {
           ],
         },
         onSuccess: async (response: { reference: string }) => {
+          setStep("confirming");
           toast.loading("Confirming payment...");
           try {
             const verifyRes = await fetch("/api/orders/verify", {
@@ -101,28 +116,35 @@ export default function CheckoutClient() {
               body: JSON.stringify({ reference: response.reference, orderId: order.id }),
             });
             const verifyData = await verifyRes.json();
+            toast.dismiss();
             if (verifyData.success) {
-              toast.dismiss();
-              router.push(`/order-confirmation?order=${order.orderNumber}&ref=${response.reference}`);
+              setStep("done");
+              if ((window as any).__refreshCartCount) (window as any).__refreshCartCount();
+              setTimeout(() => {
+                router.push(`/order-confirmation?order=${order.orderNumber}&ref=${response.reference}`);
+              }, 600);
             } else {
-              toast.dismiss();
+              setStep("details");
               toast.error("Payment received but verification failed. Contact us with your payment reference.");
             }
           } catch {
             toast.dismiss();
+            setStep("details");
             toast.error("Verification error. Please contact support with reference: " + response.reference);
           }
         },
         onClose: () => {
+          setSubmitting(false);
+          setStep("details");
           toast("Payment cancelled. Your order is saved — complete payment anytime.", { icon: "ℹ️" });
         },
       });
 
       handler.openIframe();
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong");
-    } finally {
       setSubmitting(false);
+      setStep("details");
+      toast.error(err.message || "Something went wrong");
     }
   }
 
@@ -142,6 +164,56 @@ export default function CheckoutClient() {
   return (
     <>
       <script src="https://js.paystack.co/v1/inline.js" async />
+
+      {/* Progress steps */}
+      <div className="flex items-center justify-center gap-2 mb-10">
+        {steps.map((s, i) => {
+          const currentIdx = stepIndex(step);
+          const active = i <= currentIdx;
+          return (
+            <div key={s.key} className="flex items-center gap-2">
+              <div className={`w-7 h-7 flex items-center justify-center text-xs font-bold transition-colors ${
+                active ? "bg-gold text-empire-black" : "bg-gray-200 text-gray-400"
+              }`}>
+                {i < currentIdx ? "✓" : s.num}
+              </div>
+              <span className={`text-xs uppercase tracking-wide transition-colors ${
+                active ? "text-gold font-semibold" : "text-gray-400"
+              }`}>{s.label}</span>
+              {i < steps.length - 1 && (
+                <div className={`w-8 h-px mx-1 transition-colors ${active ? "bg-gold/50" : "bg-gray-200"}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Payment overlay */}
+      {(step === "paying" || step === "confirming") && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+          <div className="bg-white p-8 max-w-sm w-full mx-4 text-center shadow-2xl">
+            <div className="w-12 h-12 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-5" />
+            <p className="font-serif text-xl text-empire-black mb-2">
+              {step === "paying" ? "Opening Payment Window..." : "Confirming Payment..."}
+            </p>
+            <p className="text-sm text-empire-grey">
+              {step === "paying"
+                ? "Please complete the payment in the popup that appears."
+                : "Please wait while we verify your transaction."}
+            </p>
+            {step === "paying" && (
+              <button
+                type="button"
+                onClick={() => { setSubmitting(false); setStep("details"); }}
+                className="mt-6 text-xs text-empire-grey hover:text-red-500 underline"
+              >
+                Cancel Payment
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
 
@@ -149,45 +221,45 @@ export default function CheckoutClient() {
           <div className="lg:col-span-3 space-y-6">
 
             {/* Contact */}
-            <div className="bg-white border border-gray-100 p-7">
+            <div className={`border p-7 transition-colors ${form.customerName && form.customerEmail && form.customerPhone ? "bg-white border-gray-100" : "bg-white border-gray-100"}`}>
               <h2 className="font-serif text-xl text-empire-black mb-5 flex items-center gap-2">
                 <span className="w-6 h-6 bg-gold text-empire-black text-xs font-bold flex items-center justify-center">1</span>
                 Contact Information
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs tracking-widests uppercase text-empire-grey mb-2">Full Name *</label>
+                  <label className="block text-xs tracking-widest uppercase text-empire-grey mb-2">Full Name *</label>
                   <input required value={form.customerName} onChange={(e) => set("customerName", e.target.value)} className="input-field" placeholder="Your full name" />
                 </div>
                 <div>
-                  <label className="block text-xs tracking-widests uppercase text-empire-grey mb-2">Phone *</label>
+                  <label className="block text-xs tracking-widest uppercase text-empire-grey mb-2">Phone *</label>
                   <input required value={form.customerPhone} onChange={(e) => set("customerPhone", e.target.value)} className="input-field" placeholder="+234..." />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs tracking-widests uppercase text-empire-grey mb-2">Email Address *</label>
+                  <label className="block text-xs tracking-widest uppercase text-empire-grey mb-2">Email Address *</label>
                   <input required type="email" value={form.customerEmail} onChange={(e) => set("customerEmail", e.target.value)} className="input-field" placeholder="you@example.com (receipt will be sent here)" />
                 </div>
               </div>
             </div>
 
             {/* Shipping address */}
-            <div className="bg-white border border-gray-100 p-7">
+            <div className={`border p-7 transition-colors ${form.state ? "bg-white border-gray-100" : "bg-white border-gray-100"}`}>
               <h2 className="font-serif text-xl text-empire-black mb-5 flex items-center gap-2">
                 <span className="w-6 h-6 bg-gold text-empire-black text-xs font-bold flex items-center justify-center">2</span>
                 Delivery Address
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs tracking-widests uppercase text-empire-grey mb-2">Street Address *</label>
+                  <label className="block text-xs tracking-widest uppercase text-empire-grey mb-2">Street Address *</label>
                   <input required value={form.shippingAddress} onChange={(e) => set("shippingAddress", e.target.value)} className="input-field" placeholder="House number, street name, landmark..." />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs tracking-widests uppercase text-empire-grey mb-2">City / Town *</label>
+                    <label className="block text-xs tracking-widest uppercase text-empire-grey mb-2">City / Town *</label>
                     <input required value={form.city} onChange={(e) => set("city", e.target.value)} className="input-field" placeholder="City" />
                   </div>
                   <div>
-                    <label className="block text-xs tracking-widests uppercase text-empire-grey mb-2">State *</label>
+                    <label className="block text-xs tracking-widest uppercase text-empire-grey mb-2">State *</label>
                     <select required value={form.state} onChange={(e) => set("state", e.target.value)} className="input-field">
                       <option value="">Select state...</option>
                       {NIGERIA_STATES.map((s) => <option key={s}>{s}</option>)}
@@ -201,25 +273,8 @@ export default function CheckoutClient() {
                   </div>
                 )}
                 <div>
-                  <label className="block text-xs tracking-widests uppercase text-empire-grey mb-2">Order Notes (optional)</label>
+                  <label className="block text-xs tracking-widest uppercase text-empire-grey mb-2">Order Notes (optional)</label>
                   <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} className="input-field min-h-[80px] resize-none" placeholder="Special delivery instructions..." />
-                </div>
-              </div>
-            </div>
-
-            {/* Payment notice */}
-            <div className="bg-white border border-gray-100 p-7">
-              <h2 className="font-serif text-xl text-empire-black mb-4 flex items-center gap-2">
-                <span className="w-6 h-6 bg-gold text-empire-black text-xs font-bold flex items-center justify-center">3</span>
-                Payment
-              </h2>
-              <div className="flex items-center gap-4 p-4 bg-empire-light border border-gray-100">
-                <div className="w-10 h-10 bg-empire-black flex items-center justify-center flex-shrink-0">
-                  <span className="text-gold text-xs font-bold">PS</span>
-                </div>
-                <div>
-                  <p className="font-medium text-empire-black text-sm">Paystack Secure Payment</p>
-                  <p className="text-xs text-empire-grey mt-0.5">Cards, bank transfer, USSD — all accepted. 100% secure.</p>
                 </div>
               </div>
             </div>
