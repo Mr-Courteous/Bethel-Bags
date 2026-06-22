@@ -133,40 +133,61 @@ export default function DownloadReceiptButton({ orderNumber }: { orderNumber: st
 
       // ── Items Table ──
       sectionTitle("ITEMS");
+
+      const colItem = { x: 18, w: 95 };
+      const colQty = { x: 125 };
+      const colPrice = { x: 162 };
+      const colTotal = { x: 192 };
+
+      // Table header
       doc.setFillColor(245, 237, 214);
-      doc.rect(15, y - 3, pw - 30, 6, "F");
+      doc.rect(15, y - 3, pw - 30, 7, "F");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
       doc.setTextColor(26, 26, 26);
-      doc.text("Item", 18, y + 1);
-      doc.text("Qty", 130, y + 1, { align: "center" });
-      doc.text("Price", 155, y + 1, { align: "right" });
-      doc.text("Total", 185, y + 1, { align: "right" });
-      y += 8;
+      doc.text("ITEM", colItem.x, y + 1);
+      doc.text("QTY", colQty.x, y + 1, { align: "center" });
+      doc.text("UNIT PRICE", colPrice.x, y + 1, { align: "right" });
+      doc.text("TOTAL", colTotal.x, y + 1, { align: "right" });
+      y += 9;
 
+      // Table rows
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      for (const item of order.items) {
-        const lines = doc.splitTextToSize(item.name || "", 110);
+      doc.setFontSize(9);
+      for (let i = 0; i < order.items.length; i++) {
+        const item = order.items[i];
+        const lines = doc.splitTextToSize(item.name || "", colItem.w);
         doc.setTextColor(26, 26, 26);
-        doc.text(lines[0], 18, y);
+        doc.text(lines[0], colItem.x, y);
         doc.setTextColor(102, 102, 102);
-        doc.text(String(item.quantity), 130, y, { align: "center" });
-        doc.text(fmt(item.price), 155, y, { align: "right" });
-        doc.text(fmt(item.price * item.quantity), 185, y, { align: "right" });
-        y += 5;
+        doc.text(String(item.quantity), colQty.x, y, { align: "center" });
+        doc.text(fmt(item.price), colPrice.x, y, { align: "right" });
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(26, 26, 26);
+        doc.text(fmt(item.price * item.quantity), colTotal.x, y, { align: "right" });
+        doc.setFont("helvetica", "normal");
+        y += 6;
+        if (i < order.items.length - 1) {
+          doc.setDrawColor(230, 230, 230);
+          doc.setLineWidth(0.3);
+          doc.line(15, y - 2, pw - 15, y - 2);
+        }
       }
 
-      y += 2;
-      goldLine(y);
-      y += 5;
+      // Total line
+      y += 3;
+      doc.setDrawColor(201, 168, 76);
+      doc.setLineWidth(0.7);
+      doc.line(15, y, pw - 15, y);
+      y += 7;
+
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setTextColor(26, 26, 26);
-      doc.text("Total Paid:", 140, y, { align: "right" });
+      doc.text("Total Paid:", colItem.x, y);
       doc.setTextColor(201, 168, 76);
-      doc.text(fmt(order.total), 195, y, { align: "right" });
-      y += 8;
+      doc.text(fmt(order.total), colTotal.x, y, { align: "right" });
+      y += 10;
 
       // ── Payment Details ──
       goldLine(y);
