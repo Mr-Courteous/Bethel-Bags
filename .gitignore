@@ -35,3 +35,171 @@ yarn-error.log*
 next-env.d.ts
 
 BagCraft_Ecommerce_Roadmap
+
+
+Meta (Facebook) SDK Integration Request for Sabino Edu Android App
+
+Objective
+
+We need to integrate the Meta (Facebook) Android SDK into the Sabino Edu Android app so that Meta Ads can accurately track App Installs, App Opens, Completed Registrations, and App Purchases. This integration is required so Meta can optimize our App Install and App Purchase campaigns.
+
+Meta App Details
+
+App Name: Sabino Edu
+
+Meta App ID: 1604773563928085
+
+Meta Client Token: 3645128436aefe497756f38f593c3f3a
+
+Official Meta Android SDK Documentation:
+
+https://developers.facebook.com/docs/android/
+
+---
+
+Step 1: Add the Meta Android SDK
+
+Open the Android project in Android Studio.
+
+Add the latest official Meta Android SDK dependency as recommended in the official Meta documentation.
+
+Sync the Gradle project and ensure there are no dependency or build errors.
+
+---
+
+Step 2: Configure the Meta App
+
+Configure the application with:
+
+- Facebook App ID:
+  
+  - 1604773563928085
+
+- Facebook Client Token:
+  
+  - 3645128436aefe497756f38f593c3f3a
+
+Store these values in the appropriate Android resource file as recommended by Meta.
+
+---
+
+Step 3: Update AndroidManifest.xml
+
+Update the AndroidManifest.xml according to the latest Meta SDK documentation.
+
+Ensure that:
+
+- The Meta App ID is configured.
+- The Client Token is configured.
+- Internet permission exists.
+- Any additional Meta SDK metadata required by the latest SDK is included.
+
+---
+
+Step 4: Initialize the Meta SDK
+
+Initialize the Meta SDK during application startup using Meta's latest recommended initialization method.
+
+The SDK should initialize automatically every time the application starts.
+
+---
+
+Step 5: Enable Automatic App Events
+
+Enable automatic tracking for:
+
+- App Install
+- App Activate (App Open)
+- App Sessions
+
+These events should be automatically sent to Meta once the SDK is correctly configured.
+
+---
+
+Step 6: Implement Manual App Events
+
+Implement the following events inside the application:
+
+Completed Registration
+
+Whenever a user successfully creates an account, log the Completed Registration event.
+
+Purchase
+
+Whenever a user successfully completes a payment, subscription, or in-app purchase, log the Purchase event with the correct purchase value and currency.
+
+This event is required so Meta Ads can optimize campaigns for purchases.
+
+---
+
+Step 7: Build the Application
+
+After completing the SDK integration:
+
+- Resolve all build issues.
+- Ensure the project compiles successfully.
+- Generate a release Android App Bundle (AAB).
+
+---
+
+Step 8: Test the SDK Integration
+
+Install the release build on a physical Android device.
+
+Verify that:
+
+- The app opens successfully.
+- Registration works.
+- Purchases trigger the Purchase event.
+- No crashes occur.
+
+---
+
+Step 9: Verify in Meta Events Manager
+
+Open Meta Events Manager.
+
+Use the Test Events tool to verify that Meta receives:
+
+- App Install
+- App Activate
+- Completed Registration
+- Purchase
+
+If any event is missing, review the implementation, fix the issue, rebuild the app, and test again until all events are received successfully.
+
+---
+
+Step 10: Prepare the Production Release
+
+Once testing is successful:
+
+- Increase the Version Code.
+- Update the Version Name.
+- Generate the final signed AAB.
+
+---
+
+Step 11: Upload to Google Play Console
+
+Upload the signed AAB to the Google Play Console.
+
+Create a new release.
+
+Submit the release for Google's review.
+
+After approval, publish the update.
+
+---
+
+Expected Outcome
+
+After the updated app is released:
+
+- Meta will track App Installs.
+- Meta will track App Opens.
+- Meta will track Completed Registrations.
+- Meta will track Purchases.
+- Meta Ads Manager will be able to optimize App Install and App Purchase campaigns using real conversion data.
+
+Please follow the latest official Meta Android SDK documentation throughout the implementation and avoid deprecated APIs or outdated integration methods.

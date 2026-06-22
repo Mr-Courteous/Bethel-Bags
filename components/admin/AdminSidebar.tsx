@@ -16,23 +16,25 @@ const navItems = [
   { href: "/admin/users", label: "Customers", icon: "👥" },
 ];
 
-export default function AdminSidebar() {
+interface AdminSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
 
-  return (
-    <aside className="w-60 bg-empire-charcoal flex-shrink-0 flex flex-col">
-      <div className="p-5 border-b border-white/5">
+  const sidebarContent = (
+    <div className="flex flex-col h-full">
+      <div className="p-5 border-b border-white/5 flex items-center justify-between">
         <Logo variant="light" size="sm" />
-        <p className="text-[10px] tracking-widest text-gold/70 uppercase mt-2 ml-0.5">Admin Panel</p>
+        <button onClick={onClose} className="lg:hidden text-gray-400 hover:text-white text-lg leading-none">&times;</button>
       </div>
-
       <nav className="flex-1 py-4 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
           return (
-            <Link
-              key={item.href}
-              href={item.href}
+            <Link key={item.href} href={item.href} onClick={onClose}
               className={`flex items-center gap-3 px-5 py-3 text-sm transition-colors duration-150 ${
                 isActive
                   ? "bg-gold/15 text-gold border-r-2 border-gold"
@@ -45,12 +47,30 @@ export default function AdminSidebar() {
           );
         })}
       </nav>
-
       <div className="p-5 border-t border-white/5">
-        <Link href="/" className="text-xs text-gray-600 hover:text-gold transition-colors flex items-center gap-2">
+        <Link href="/" onClick={onClose} className="text-xs text-gray-600 hover:text-gold transition-colors flex items-center gap-2">
           <span>←</span> View Store
         </Link>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex w-60 bg-empire-charcoal flex-shrink-0 flex-col">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile drawer overlay */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-empire-charcoal flex-shrink-0 flex-col shadow-2xl z-10">
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

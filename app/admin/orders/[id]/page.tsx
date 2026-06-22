@@ -22,36 +22,39 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <Link href="/admin/orders" className="text-xs text-empire-grey hover:text-gold transition-colors flex items-center gap-1 mb-3">← Back to Orders</Link>
-          <h1 className="font-serif text-3xl text-empire-black">Order {order.orderNumber}</h1>
-          <p className="text-empire-grey text-sm mt-1">
-            Placed {new Date(order.createdAt).toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-          </p>
+      {/* Header */}
+      <div className="mb-6 lg:mb-8">
+        <Link href="/admin/orders" className="text-xs text-empire-grey hover:text-gold transition-colors flex items-center gap-1 mb-3">← Back to Orders</Link>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="font-serif text-2xl lg:text-3xl text-empire-black">Order {order.orderNumber}</h1>
+            <p className="text-empire-grey text-sm mt-1">
+              Placed {new Date(order.createdAt).toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </p>
+          </div>
+          <span className={`self-start text-xs lg:text-sm font-medium px-3 lg:px-4 py-2 border uppercase tracking-wide ${STATUS_COLORS[order.status] || "bg-gray-50 text-gray-600 border-gray-200"}`}>
+            {order.status}
+          </span>
         </div>
-        <span className={`text-sm font-medium px-4 py-2 border uppercase tracking-wide ${STATUS_COLORS[order.status] || "bg-gray-50 text-gray-600 border-gray-200"}`}>
-          {order.status}
-        </span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left – Items */}
+        {/* Left – Items + Payment */}
         <div className="lg:col-span-2 space-y-5">
           {/* Order items */}
-          <div className="bg-white border border-gray-100 p-6">
-            <h2 className="font-serif text-xl text-empire-black mb-5">Items ({order.items.length})</h2>
+          <div className="bg-white border border-gray-100 p-4 lg:p-6">
+            <h2 className="font-serif text-lg lg:text-xl text-empire-black mb-4 lg:mb-5">Items ({order.items.length})</h2>
             <div className="space-y-4">
               {order.items.map((item) => (
-                <div key={item.id} className="flex items-center gap-4 py-3 border-b border-gray-50 last:border-0">
-                  <div className="w-14 h-14 bg-gold-muted flex-shrink-0 flex items-center justify-center">
-                    <span className="font-serif text-gold text-xl opacity-30">BE</span>
+                <div key={item.id} className="flex items-center gap-3 lg:gap-4 py-3 border-b border-gray-50 last:border-0">
+                  <div className="w-10 h-10 lg:w-14 lg:h-14 bg-gold-muted flex-shrink-0 flex items-center justify-center">
+                    <span className="font-serif text-gold text-base lg:text-xl opacity-30">BE</span>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-empire-black">{item.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-empire-black text-sm lg:text-base truncate">{item.name}</p>
                     <p className="text-xs text-empire-grey mt-0.5">{formatPrice(item.price)} × {item.quantity}</p>
                   </div>
-                  <p className="font-semibold text-empire-black">{formatPrice(item.price * item.quantity)}</p>
+                  <p className="font-semibold text-empire-black text-sm lg:text-base">{formatPrice(item.price * item.quantity)}</p>
                 </div>
               ))}
             </div>
@@ -60,7 +63,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                 <span>Subtotal</span>
                 <span>{formatPrice(order.total)}</span>
               </div>
-              <div className="flex justify-between font-serif text-xl font-bold text-empire-black border-t border-gray-100 pt-3 mt-3">
+              <div className="flex justify-between font-serif text-lg lg:text-xl font-bold text-empire-black border-t border-gray-100 pt-3 mt-3">
                 <span>Total</span>
                 <span>{formatPrice(order.total)}</span>
               </div>
@@ -68,8 +71,8 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
           </div>
 
           {/* Payment info */}
-          <div className="bg-white border border-gray-100 p-6">
-            <h2 className="font-serif text-xl text-empire-black mb-5">Payment</h2>
+          <div className="bg-white border border-gray-100 p-4 lg:p-6">
+            <h2 className="font-serif text-lg lg:text-xl text-empire-black mb-4 lg:mb-5">Payment</h2>
             <div className="space-y-3 text-sm">
               {[
                 ["Payment Reference", order.paystackRef || "—"],
@@ -77,8 +80,8 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                 ["Order Status", order.status],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-4">
-                  <span className="text-empire-grey">{label}</span>
-                  <span className="font-medium text-empire-black text-right">{value}</span>
+                  <span className="text-empire-grey text-xs lg:text-sm">{label}</span>
+                  <span className="font-medium text-empire-black text-right text-xs lg:text-sm break-all max-w-[60%]">{value}</span>
                 </div>
               ))}
             </div>
@@ -88,35 +91,35 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
         {/* Right – Customer, Address, Status Update */}
         <div className="space-y-5">
           {/* Customer info */}
-          <div className="bg-white border border-gray-100 p-6">
+          <div className="bg-white border border-gray-100 p-4 lg:p-6">
             <h2 className="font-serif text-lg text-empire-black mb-4">Customer</h2>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-gold/15 flex items-center justify-center flex-shrink-0">
                 <span className="text-gold font-serif font-bold">{order.customerName[0]}</span>
               </div>
-              <div>
-                <p className="font-semibold text-empire-black">{order.customerName}</p>
+              <div className="min-w-0">
+                <p className="font-semibold text-empire-black text-sm lg:text-base truncate">{order.customerName}</p>
                 {order.user && <p className="text-xs text-gold tracking-wide">Registered Customer</p>}
               </div>
             </div>
             <div className="space-y-2 text-sm text-empire-grey border-t border-gray-100 pt-4">
-              <p>{order.customerEmail}</p>
+              <p className="break-all">{order.customerEmail}</p>
               {order.customerPhone && <p>{order.customerPhone}</p>}
             </div>
           </div>
 
           {/* Shipping address */}
-          <div className="bg-white border border-gray-100 p-6">
+          <div className="bg-white border border-gray-100 p-4 lg:p-6">
             <h2 className="font-serif text-lg text-empire-black mb-4">Delivery Address</h2>
             <div className="text-sm text-empire-grey space-y-1">
               <p className="font-medium text-empire-black">{order.customerName}</p>
-              <p>{order.shippingAddress}</p>
+              <p className="break-words">{order.shippingAddress}</p>
               <p>{order.city}, {order.state}</p>
             </div>
             {order.notes && (
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <p className="text-xs text-empire-grey tracking-widest uppercase mb-1">Notes</p>
-                <p className="text-sm text-empire-grey italic">{order.notes}</p>
+                <p className="text-sm text-empire-grey italic break-words">{order.notes}</p>
               </div>
             )}
           </div>
