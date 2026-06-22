@@ -4,11 +4,13 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 
+const CART_COOKIE = "be_cart_session";
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id || null;
-    const sessionId = cookies().get("be_cart_session")?.value;
+    const sessionId = cookies().get(CART_COOKIE)?.value;
 
     let count = 0;
 

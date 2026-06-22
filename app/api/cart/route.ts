@@ -6,6 +6,15 @@ import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
+const CART_COOKIE = "be_cart_session";
+
+function getOrCreateSessionId(): { id: string; isNew: boolean } {
+  const cookieStore = cookies();
+  const existing = cookieStore.get(CART_COOKIE)?.value;
+  if (existing) return { id: existing, isNew: false };
+  return { id: `guest_${Date.now()}_${Math.random().toString(36).slice(2)}`, isNew: true };
+}
+
 async function getOrCreateCart(userId: string | null, sessionId: string) {
   if (userId) {
     return prisma.cart.upsert({
@@ -23,19 +32,23 @@ async function getOrCreateCart(userId: string | null, sessionId: string) {
   });
 }
 
-function getSessionId() {
-  const cookieStore = cookies();
-  let sessionId = cookieStore.get("cart_session")?.value;
-  if (!sessionId) sessionId = `guest_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  return sessionId;
+function responseWithCookie(data: any, sessionId: string, status = 200) {
+  const res = NextResponse.json(data, { status });
+  res.cookies.set(CART_COOKIE, sessionId, {
+    maxAge: 60 * 60 * 24 * 30,
+    httpOnly: true,
+    path: "/",
+  });
+  return res;
 }
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id || null;
-    const sessionId = getSessionId();
+    const { id: sessionId, isNew } = getOrCreateSessionId();
     const cart = await getOrCreateCart(userId, sessionId);
+    if (isNew || !userId) return responseWithCookie(cart, sessionId);
     return NextResponse.json(cart);
   } catch (err) {
     console.error(err);
@@ -47,7 +60,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id || null;
-    const sessionId = getSessionId();
+    const { id: sessionId, isNew } = getOrCreateSessionId();
     const { productId, quantity = 1 } = await req.json();
 
     const cart = await getOrCreateCart(userId, sessionId);
@@ -64,11 +77,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const response = NextResponse.json({ success: true });
-    if (!userId) {
-      response.cookies.set("cart_session", sessionId, { maxAge: 60 * 60 * 24 * 30, httpOnly: true });
-    }
-    return response;
+    return responseWithCookie({ success: true }, sessionId);
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Failed" }, { status: 500 });

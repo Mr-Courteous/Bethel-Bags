@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { verifyPaystackPayment } from "@/lib/paystack";
 import { cookies } from "next/headers";
 
+const CART_COOKIE = "be_cart_session";
+
 export async function POST(req: NextRequest) {
   try {
     const { reference, orderId } = await req.json();
@@ -44,8 +46,8 @@ export async function POST(req: NextRequest) {
       ),
     ]);
 
-    // Clear cart
-    const sessionId = cookies().get("be_cart_session")?.value;
+    // Clear guest cart
+    const sessionId = cookies().get(CART_COOKIE)?.value;
     if (sessionId) {
       const guestCart = await prisma.cart.findUnique({ where: { sessionId } });
       if (guestCart) await prisma.cartItem.deleteMany({ where: { cartId: guestCart.id } });
@@ -55,7 +57,12 @@ export async function POST(req: NextRequest) {
       if (userCart) await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
     }
 
-    return NextResponse.json({ success: true, orderNumber: order.orderNumber });
+    // Clear the guest cart cookie so the cart shows empty after checkout
+    const res = NextResponse.json({ success: true, orderNumber: order.orderNumber });
+    if (sessionId) {
+      res.cookies.set(CART_COOKIE, "", { maxAge: 0, path: "/" });
+    }
+    return res;
   } catch (err) {
     console.error("Verify payment error:", err);
     return NextResponse.json({ error: "Verification failed" }, { status: 500 });

@@ -5,11 +5,13 @@ import { prisma } from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/utils";
 import { cookies } from "next/headers";
 
+const CART_COOKIE = "be_cart_session";
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id || null;
-    const sessionId = cookies().get("be_cart_session")?.value;
+    const sessionId = cookies().get(CART_COOKIE)?.value;
 
     const body = await req.json();
     const { customerName, customerEmail, customerPhone, shippingAddress, city, state, notes } = body;
