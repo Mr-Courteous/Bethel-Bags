@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import toast from "react-hot-toast";
 
 export default function AdminLoginPage() {
@@ -38,8 +39,8 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         {/* Logo area */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 border border-gold/40 mb-4">
-            <span className="font-serif text-3xl font-bold text-gold">BE</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 border border-gold/40 mb-4 relative">
+            <Image src="/bethel-logo.jpg" alt="Bethel Empire" fill className="object-contain p-1" />
           </div>
           <h1 className="font-serif text-2xl text-white tracking-wide">Bethel Empire</h1>
           <p className="text-xs tracking-[0.3em] text-gold uppercase mt-1">Admin Portal</p>

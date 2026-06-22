@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 interface LogoProps {
   variant?: "light" | "dark";
@@ -6,21 +7,15 @@ interface LogoProps {
 }
 
 export default function Logo({ variant = "dark", size = "md" }: LogoProps) {
-  const sizes = { sm: "text-lg", md: "text-2xl", lg: "text-4xl" };
-  const textColor = variant === "light" ? "text-white" : "text-empire-black";
+  const dims = { sm: 28, md: 36, lg: 52 };
 
   return (
     <Link href="/" className="flex items-center gap-2 group">
-      {/* BE monogram */}
-      <div className={`relative flex items-center justify-center font-serif font-bold leading-none ${sizes[size]} ${textColor}`}>
-        <span>B</span>
-        <span className="relative">
-          E
-          <span className="absolute -top-1 -right-1 text-gold text-xs">✦</span>
-        </span>
+      <div className="relative flex-shrink-0" style={{ width: dims[size], height: dims[size] }}>
+        <Image src="/bethel-logo.jpg" alt="Bethel Empire" fill className="object-contain" />
       </div>
       <div className="flex flex-col leading-tight">
-        <span className={`font-serif font-bold tracking-widest ${size === "sm" ? "text-sm" : size === "lg" ? "text-xl" : "text-base"} ${textColor}`}>
+        <span className={`font-serif font-bold tracking-widest ${size === "sm" ? "text-sm" : size === "lg" ? "text-xl" : "text-base"} ${variant === "light" ? "text-white" : "text-empire-black"}`}>
           BETHEL
         </span>
         <span className={`font-sans tracking-[0.3em] uppercase ${size === "sm" ? "text-[8px]" : "text-[10px]"} text-gold`}>
