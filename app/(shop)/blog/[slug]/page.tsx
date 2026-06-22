@@ -4,10 +4,28 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bethelempire.com";
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const post = await prisma.blogPost.findUnique({ where: { slug: params.slug, published: true } });
   if (!post) return { title: "Post Not Found" };
-  return { title: post.title, description: post.excerpt || undefined };
+  const title = `${post.title} – Bethel Empire`;
+  const description = post.excerpt || post.content?.slice(0, 155) || "";
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [{ url: `${siteUrl}/bethel-logo.jpg`, width: 800, height: 800, alt: "Bethel Empire" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [`${siteUrl}/bethel-logo.jpg`],
+    },
+  };
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {

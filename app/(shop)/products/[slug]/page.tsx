@@ -7,10 +7,30 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import AddToCartButton from "@/components/shop/AddToCartButton";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bethelempire.com";
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const product = await prisma.product.findUnique({ where: { slug: params.slug } });
   if (!product) return { title: "Product Not Found" };
-  return { title: product.name, description: product.description.slice(0, 155) };
+  const image = product.images[0] || "/bethel-logo.jpg";
+  const ogImage = image.startsWith("http") ? image : `${siteUrl}${image}`;
+  const title = `${product.name} – Bethel Empire`;
+  const description = product.description.slice(0, 155);
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [{ url: ogImage, width: 800, height: 800, alt: product.name }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
+  };
 }
 
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {

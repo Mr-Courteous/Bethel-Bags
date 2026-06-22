@@ -7,6 +7,12 @@ export const dynamic = "force-dynamic";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bethelempire.com";
 
+function ogImage(url: string) {
+  return url.startsWith("http") ? url : `${siteUrl}${url}`;
+}
+
+const defaultOgImage = ogImage("/bethel-logo.jpg");
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: "Bethel Empire – Premium Handcrafted Bags", template: "%s | Bethel Empire" },
@@ -36,13 +42,13 @@ export const metadata: Metadata = {
     title: "Bethel Empire – Premium Handcrafted Bags",
     description: "Luxury handcrafted bags made with passion. Shop our collection or enrol in our bag-making courses.",
     url: siteUrl,
-    images: [{ url: "/bethel-logo.jpg", width: 800, height: 800, alt: "Bethel Empire" }],
+    images: [{ url: defaultOgImage, width: 800, height: 800, alt: "Bethel Empire" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Bethel Empire – Premium Handcrafted Bags",
     description: "Luxury handcrafted bags made with passion. Shop our collection or enrol in our bag-making courses.",
-    images: ["/bethel-logo.jpg"],
+    images: [defaultOgImage],
   },
   robots: { index: true, follow: true },
 };
