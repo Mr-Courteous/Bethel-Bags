@@ -20,16 +20,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
-
-export async function DELETE(req: NextRequest) {
-  try {
-    await requireAdmin();
-    const id = req.nextUrl.searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
-    await prisma.galleryItem.delete({ where: { id } });
-    return NextResponse.json({ success: true });
-  } catch (err: any) {
-    if (err.message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
-  }
-}

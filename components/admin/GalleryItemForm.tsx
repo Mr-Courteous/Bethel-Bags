@@ -23,14 +23,17 @@ export default function GalleryItemForm({ initialData }: { initialData?: any }) 
     if (!form.image) return toast.error("Please upload an image");
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/gallery", {
-        method: "POST",
+      const isEdit = !!initialData;
+      const method = isEdit ? "PATCH" : "POST";
+      const url = isEdit ? `/api/admin/gallery/${initialData.id}` : "/api/admin/gallery";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      toast.success("Gallery item added!");
+      toast.success(isEdit ? "Gallery item updated!" : "Gallery item added!");
       router.push("/admin/gallery");
       router.refresh();
     } catch (err: any) {
@@ -60,7 +63,7 @@ export default function GalleryItemForm({ initialData }: { initialData?: any }) 
         </div>
       </div>
       <div className="flex gap-3 mt-5">
-        <button type="submit" disabled={loading} className="btn-gold">{loading ? "Saving..." : "Add to Gallery"}</button>
+        <button type="submit" disabled={loading} className="btn-gold">{loading ? "Saving..." : initialData ? "Update Gallery Item" : "Add to Gallery"}</button>
         <button type="button" onClick={() => router.back()} className="btn-outline">Cancel</button>
       </div>
     </form>
