@@ -4,7 +4,7 @@ import { CldUploadWidget, CloudinaryUploadWidgetResults } from "next-cloudinary"
 const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "").replace(/^"(.*)"$/, "$1");
 
 const widgetOptions = {
-  sources: ["local"],
+  sources: ["local" as const],
   singleUploadAutoClose: true,
   maxFileSize: 5000000,
   clientAllowedFormats: ["png", "jpg", "jpeg", "webp"],
