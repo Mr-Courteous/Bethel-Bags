@@ -4,6 +4,7 @@ import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import CartCountRefresher from "@/components/shop/CartCountRefresher";
+import PendingOrderRefresher from "@/components/shop/PendingOrderRefresher";
 
 export const metadata: Metadata = { title: "Order Confirmed!" };
 
@@ -19,7 +20,9 @@ export default async function OrderConfirmationPage({
     include: { items: true },
   });
 
-  if (!order || order.status === "PENDING") notFound();
+  if (!order) notFound();
+
+  const isPending = order.status === "PENDING";
 
   const receiptUrl = searchParams.ref
     ? `https://paystack.com/receipt/${searchParams.ref}`
@@ -28,17 +31,32 @@ export default async function OrderConfirmationPage({
   return (
     <div>
       <CartCountRefresher />
+      {isPending && <PendingOrderRefresher interval={5000} />}
       <section className="bg-empire-black py-16 relative">
         <div className="absolute top-0 left-0 right-0 h-0.5 gold-shimmer" />
         <div className="container-max px-4 sm:px-6 lg:px-8 text-center">
-          <div className="w-20 h-20 border-2 border-gold flex items-center justify-center mx-auto mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
-            </svg>
+          <div className={`w-20 h-20 border-2 flex items-center justify-center mx-auto mb-6 ${isPending ? "border-yellow-500" : "border-gold"}`}>
+            {isPending ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-yellow-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
           </div>
-          <p className="text-gold text-xs tracking-[0.4em] uppercase mb-3">Payment Successful</p>
-          <h1 className="font-serif text-4xl lg:text-5xl text-white mb-3">Order Confirmed!</h1>
-          <p className="text-gray-400 text-lg">Thank you for shopping with Bethel Empire.</p>
+          <p className={`text-xs tracking-[0.4em] uppercase mb-3 ${isPending ? "text-yellow-500" : "text-gold"}`}>
+            {isPending ? "Payment Processing" : "Payment Successful"}
+          </p>
+          <h1 className="font-serif text-4xl lg:text-5xl text-white mb-3">
+            {isPending ? "Payment Received!" : "Order Confirmed!"}
+          </h1>
+          <p className="text-gray-400 text-lg">
+            {isPending
+              ? "Your payment is being confirmed. This page will update automatically."
+              : "Thank you for shopping with Bethel Empire."}
+          </p>
           <div className="mt-5 inline-block bg-gold/10 border border-gold/30 px-6 py-3">
             <p className="text-xs text-gold tracking-widest uppercase mb-1">Order Number</p>
             <p className="font-mono font-bold text-white text-xl tracking-wider">{order.orderNumber}</p>
@@ -67,15 +85,15 @@ export default async function OrderConfirmationPage({
             <div className="bg-white border border-gray-100 p-6">
               <h2 className="font-serif text-lg text-empire-black mb-4">Order Details</h2>
               <div className="space-y-3 text-sm">
-                {[
-                  ["Order Number", order.orderNumber],
-                  ["Status", "PAID"],
+                  {[
+                    ["Order Number", order.orderNumber],
+                    ["Status", isPending ? "PENDING" : "PAID"],
                   ["Date", new Date(order.createdAt).toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })],
                   ["Payment Ref", searchParams.ref || order.paystackRef || "—"],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between gap-4">
                     <span className="text-empire-grey flex-shrink-0">{label}</span>
-                    <span className={`font-medium text-right ${label === "Status" ? "text-emerald-600 uppercase text-xs tracking-wide" : "text-empire-black break-all max-w-[60%]"}`}>{value}</span>
+                    <span className={`font-medium text-right ${label === "Status" ? (isPending ? "text-yellow-600" : "text-emerald-600") + " uppercase text-xs tracking-wide" : "text-empire-black break-all max-w-[60%]"}`}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -131,25 +149,37 @@ export default async function OrderConfirmationPage({
           </div>
 
           <div className="bg-empire-charcoal p-7 mb-8">
-            <h3 className="font-serif text-xl text-white mb-5">What Happens Next?</h3>
+            <h3 className="font-serif text-xl text-white mb-5">{isPending ? "What's happening?" : "What Happens Next?"}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              {[
-                { icon: "✉️", title: "Confirmation Email", desc: "A receipt has been sent to your email address." },
-                { icon: "📦", title: "Order Processing", desc: "We'll start preparing your order within 24 hours." },
-                { icon: "🚚", title: "Delivery", desc: `Expected delivery to ${order.state} in 3–7 business days.` },
-              ].map((s) => (
-                <div key={s.title} className="text-center">
-                  <span className="text-3xl block mb-3">{s.icon}</span>
-                  <p className="font-sans font-semibold text-white text-sm mb-1">{s.title}</p>
-                  <p className="text-gray-400 text-xs leading-relaxed">{s.desc}</p>
-                </div>
-              ))}
+              {isPending
+                ? [
+                    { icon: "⏳", title: "Confirming Payment", desc: "We're verifying your payment with Paystack. This page refreshes every 5 seconds." },
+                    { icon: "🔄", title: "Auto-Refresh", desc: "Once confirmed, this page will update automatically. No need to reload manually." },
+                    { icon: "📩", title: "Receipt Sent", desc: `A payment receipt will be emailed to ${order.customerEmail} once confirmed.` },
+                  ].map((s) => (
+                    <div key={s.title} className="text-center">
+                      <span className="text-3xl block mb-3">{s.icon}</span>
+                      <p className="font-sans font-semibold text-white text-sm mb-1">{s.title}</p>
+                      <p className="text-gray-400 text-xs leading-relaxed">{s.desc}</p>
+                    </div>
+                  ))
+                : [
+                    { icon: "✉️", title: "Confirmation Email", desc: "A receipt has been sent to your email address." },
+                    { icon: "📦", title: "Order Processing", desc: "We'll start preparing your order within 24 hours." },
+                    { icon: "🚚", title: "Delivery", desc: `Expected delivery to ${order.state} in 3–7 business days.` },
+                  ].map((s) => (
+                    <div key={s.title} className="text-center">
+                      <span className="text-3xl block mb-3">{s.icon}</span>
+                      <p className="font-sans font-semibold text-white text-sm mb-1">{s.title}</p>
+                      <p className="text-gray-400 text-xs leading-relaxed">{s.desc}</p>
+                    </div>
+                  ))}
             </div>
           </div>
 
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/products" className="btn-gold">Continue Shopping</Link>
-            <Link href="/account/orders" className="btn-outline">View My Orders</Link>
+            {!isPending && <Link href="/account/orders" className="btn-outline">View My Orders</Link>}
             <Link href="/contact" className="btn-dark">Need Help?</Link>
           </div>
         </div>

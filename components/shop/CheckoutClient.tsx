@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { formatPrice } from "@/lib/utils";
@@ -38,7 +38,10 @@ export default function CheckoutClient() {
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<CheckoutStep>("details");
   const [paystackReady, setPaystackReady] = useState(false);
-  const orderRef = useRef<{ id: string; number: string } | null>(null);
+  const [showFallbackBtn, setShowFallbackBtn] = useState(false);
+  const [paymentRef, setPaymentRef] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const verifying = useRef(false);
   const [form, setForm] = useState({
     customerName: "",
     customerEmail: "",
@@ -56,6 +59,14 @@ export default function CheckoutClient() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (step === "paying") {
+      setShowFallbackBtn(false);
+      const timer = setTimeout(() => setShowFallbackBtn(true), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
+
   function set(k: string, v: string) { setForm((p) => ({ ...p, [k]: v })); }
 
   const shippingFee = SHIPPING_RATES[form.state] || SHIPPING_RATES["default"];
@@ -71,6 +82,13 @@ export default function CheckoutClient() {
   function stepIndex(k: CheckoutStep) {
     return steps.findIndex((s) => s.key === k);
   }
+
+  const goToConfirmation = useCallback((orderNum: string, paystackRef: string) => {
+    setStep("done");
+    setSubmitting(false);
+    if ((window as any).__refreshCartCount) (window as any).__refreshCartCount();
+    router.push(`/order-confirmation?order=${orderNum}&ref=${paystackRef}`);
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -95,7 +113,8 @@ export default function CheckoutClient() {
       if (!orderRes.ok) throw new Error(orderData.error || "Failed to create order");
 
       const { order, paystackRef: ref } = orderData;
-      orderRef.current = { id: order.id, number: order.orderNumber };
+      setPaymentRef(ref);
+      setOrderNumber(order.orderNumber);
 
       const handler = PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
@@ -112,34 +131,37 @@ export default function CheckoutClient() {
             { display_name: "Customer Name", variable_name: "customer_name", value: form.customerName },
           ],
         },
-        onSuccess: async (response: { reference: string }) => {
+        onSuccess: (response: { reference: string }) => {
+          if (verifying.current) return;
+          verifying.current = true;
           setStep("confirming");
-          toast.loading("Confirming payment...");
-          try {
-            const verifyRes = await fetch("/api/orders/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ reference: response.reference, orderId: order.id }),
-            });
-            const verifyData = await verifyRes.json();
-            toast.dismiss();
-            if (verifyData.success) {
-              setStep("done");
-              if ((window as any).__refreshCartCount) (window as any).__refreshCartCount();
-              setTimeout(() => {
-                router.push(`/order-confirmation?order=${order.orderNumber}&ref=${response.reference}`);
-              }, 600);
-            } else {
+
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 15000);
+
+          fetch("/api/orders/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reference: response.reference, orderId: order.id }),
+            signal: controller.signal,
+          })
+            .then((r) => r.json())
+            .then((verifyData) => {
+              clearTimeout(timeout);
+              if (verifyData.success) {
+                goToConfirmation(order.orderNumber, response.reference);
+              } else {
+                setStep("details");
+                setSubmitting(false);
+                toast.error("Payment received but verification failed. Contact us with your payment reference.");
+              }
+            })
+            .catch(() => {
+              clearTimeout(timeout);
               setStep("details");
               setSubmitting(false);
-              toast.error("Payment received but verification failed. Contact us with your payment reference.");
-            }
-          } catch {
-            toast.dismiss();
-            setStep("details");
-            setSubmitting(false);
-            toast.error("Verification error. Please contact support with reference: " + response.reference);
-          }
+              toast.error("Verification error. Please contact support with reference: " + response.reference);
+            });
         },
         onClose: () => {
           setSubmitting(false);
@@ -215,13 +237,28 @@ export default function CheckoutClient() {
                 : "Please wait while we verify your transaction."}
             </p>
             {step === "paying" && (
-              <button
-                type="button"
-                onClick={() => { setSubmitting(false); setStep("details"); }}
-                className="mt-6 text-xs text-empire-grey hover:text-red-500 underline"
-              >
-                Cancel Payment
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setSubmitting(false); setStep("details"); }}
+                  className="mt-6 text-xs text-empire-grey hover:text-red-500 underline block mx-auto"
+                >
+                  Cancel Payment
+                </button>
+                {showFallbackBtn && orderNumber && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubmitting(false);
+                      if ((window as any).__refreshCartCount) (window as any).__refreshCartCount();
+                      router.push(`/order-confirmation?order=${orderNumber}&ref=${paymentRef || ""}`);
+                    }}
+                    className="btn-gold mt-4 text-sm w-full"
+                  >
+                    Continue to Confirmation
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
