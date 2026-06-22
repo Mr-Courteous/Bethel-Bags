@@ -61,21 +61,31 @@ export default async function OrderConfirmationPage({
             <p className="text-xs text-gold tracking-widest uppercase mb-1">Order Number</p>
             <p className="font-mono font-bold text-white text-xl tracking-wider">{order.orderNumber}</p>
           </div>
-          {receiptUrl && (
-            <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href={`/api/receipt/${order.orderNumber}`}
+              download
+              className="inline-flex items-center gap-2 text-sm text-gold hover:text-white border border-gold/40 hover:bg-gold/10 px-5 py-2 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download Receipt
+            </a>
+            {receiptUrl && (
               <a
                 href={receiptUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-gold hover:text-white border border-gold/40 hover:bg-gold/10 px-5 py-2 transition-colors"
+                className="inline-flex items-center gap-1 text-xs text-gold/60 hover:text-gold transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                Download Receipt
+                Paystack Receipt
               </a>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </section>
 
@@ -97,19 +107,16 @@ export default async function OrderConfirmationPage({
                   </div>
                 ))}
               </div>
-              {receiptUrl && (
-                <a
-                  href={receiptUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-1 text-xs text-gold hover:underline"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  View Paystack Receipt
-                </a>
-              )}
+              <a
+                href={`/api/receipt/${order.orderNumber}`}
+                download
+                className="mt-4 inline-flex items-center gap-1 text-xs text-gold hover:underline"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Receipt (PDF)
+              </a>
             </div>
 
             <div className="bg-white border border-gray-100 p-6">
