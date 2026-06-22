@@ -2,8 +2,6 @@
 import { CldUploadWidget, CloudinaryUploadWidgetResults } from "next-cloudinary";
 
 const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "").replace(/^"(.*)"$/, "$1");
-const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "").replace(/^"(.*)"$/, "$1");
-const isConfigured = !!(uploadPreset && cloudName && !uploadPreset.includes("your-") && !cloudName.includes("your-"));
 
 interface ImageUploaderProps {
   value: string;
@@ -16,34 +14,35 @@ interface MultiImageUploaderProps {
   max?: number;
 }
 
-function SetupWarning() {
+function UploadButton({ label, onOpen }: { label: string; onOpen: () => void }) {
+  if (!uploadPreset) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
+        Set <code className="bg-yellow-100 px-1">NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET</code> in Vercel env vars and redeploy.
+      </div>
+    );
+  }
   return (
-    <div className="bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">
-      <p className="font-medium mb-1">Cloudinary not configured</p>
-      <p>Set <code className="bg-yellow-100 px-1">NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME</code> and <code className="bg-yellow-100 px-1">NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET</code> in <code className="bg-yellow-100 px-1">.env.local</code>, then restart the dev server.</p>
-      <p className="text-xs mt-1">Need help? Create a free account at cloudinary.com → Settings → Upload → Add unsigned upload preset.</p>
-    </div>
+    <button type="button" onClick={() => onOpen()} className="btn-outline text-sm">{label}</button>
   );
 }
 
 export function ImageUploader({ value, onChange }: ImageUploaderProps) {
-  if (!isConfigured) return <SetupWarning />;
-
   return (
     <div>
-      <CldUploadWidget
-        uploadPreset={uploadPreset}
-        onSuccess={(results: CloudinaryUploadWidgetResults) => {
-          const info = results.info as any;
-          if (info?.secure_url) onChange(info.secure_url);
-        }}
-      >
-        {({ open }) => (
-          <button type="button" onClick={() => open()} className="btn-outline text-sm">
-            {value ? "Change Image" : "Upload Image"}
-          </button>
-        )}
-      </CldUploadWidget>
+      {uploadPreset ? (
+        <CldUploadWidget
+          uploadPreset={uploadPreset}
+          onSuccess={(results: CloudinaryUploadWidgetResults) => {
+            const info = results.info as any;
+            if (info?.secure_url) onChange(info.secure_url);
+          }}
+        >
+          {({ open }) => <UploadButton label={value ? "Change Image" : "Upload Image"} onOpen={open} />}
+        </CldUploadWidget>
+      ) : (
+        <UploadButton label="Upload Image" onOpen={() => {}} />
+      )}
       {value && (
         <div className="mt-3 relative w-40 aspect-[4/3] bg-gold-muted overflow-hidden border border-gray-200 group">
           <img src={value} alt="Preview" className="w-full h-full object-cover" />
@@ -72,7 +71,7 @@ export function MultiImageUploader({ values, onChange, max = 10 }: MultiImageUpl
         ))}
       </div>
       {values.length < max && (
-        isConfigured ? (
+        uploadPreset ? (
           <CldUploadWidget
             uploadPreset={uploadPreset}
             onSuccess={(results: CloudinaryUploadWidgetResults) => {
@@ -80,14 +79,10 @@ export function MultiImageUploader({ values, onChange, max = 10 }: MultiImageUpl
               if (info?.secure_url) onChange([...values, info.secure_url]);
             }}
           >
-            {({ open }) => (
-              <button type="button" onClick={() => open()} className="btn-outline text-sm">
-                {values.length === 0 ? "Upload Images" : "Add Another Image"}
-              </button>
-            )}
+            {({ open }) => <UploadButton label={values.length === 0 ? "Upload Images" : "Add Another Image"} onOpen={open} />}
           </CldUploadWidget>
         ) : (
-          <SetupWarning />
+          <UploadButton label="Upload Images" onOpen={() => {}} />
         )
       )}
     </div>
