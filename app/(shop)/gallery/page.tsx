@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
@@ -63,9 +64,13 @@ export default async function GalleryPage() {
               {items.map((item) => (
                 <div key={item.id} className="break-inside-avoid bg-white overflow-hidden group cursor-pointer border border-gray-100 hover:shadow-lg transition-all">
                   <div className="aspect-square bg-gold-muted relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="font-serif text-6xl text-gold opacity-20">BE</span>
-                    </div>
+                    {item.image ? (
+                      <Image src={item.image} alt={item.title || "Gallery image"} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="font-serif text-6xl text-gold opacity-20">BE</span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-empire-black/0 group-hover:bg-empire-black/40 transition-all duration-300 flex items-center justify-center">
                       <span className="text-white text-xs tracking-widest uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-300">View</span>
                     </div>

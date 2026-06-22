@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import Image from "next/image";
 import Link from "next/link";
 
 export default async function AdminGalleryPage() {
@@ -22,8 +23,14 @@ export default async function AdminGalleryPage() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {items.map((item) => (
-            <div key={item.id} className="aspect-square bg-gold-muted border border-gray-100 flex items-center justify-center relative group overflow-hidden">
-              <span className="font-serif text-4xl text-gold opacity-20">BE</span>
+            <div key={item.id} className="aspect-square bg-gold-muted border border-gray-100 relative group overflow-hidden">
+              {item.image ? (
+                <Image src={item.image} alt={item.title || "Gallery image"} fill className="object-cover" />
+              ) : (
+                <div className="flex items-center justify-center w-full h-full">
+                  <span className="font-serif text-4xl text-gold opacity-20">BE</span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-empire-black/0 group-hover:bg-empire-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                 <Link href={`/admin/gallery/${item.id}/edit`} className="text-white text-xs uppercase tracking-wide">Edit</Link>
               </div>

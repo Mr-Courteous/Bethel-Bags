@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
+import Image from "next/image";
 import Link from "next/link";
 
 export default async function AdminProductsPage() {
@@ -22,7 +23,7 @@ export default async function AdminProductsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100">
-              {["Product", "Category", "Price", "Stock", "Status", "Actions"].map((h) => (
+              {["Image", "Product", "Category", "Price", "Stock", "Status", "Actions"].map((h) => (
                 <th key={h} className="text-left px-5 py-3.5 text-xs tracking-widest uppercase text-empire-grey font-medium">{h}</th>
               ))}
             </tr>
@@ -30,6 +31,15 @@ export default async function AdminProductsPage() {
           <tbody>
             {products.map((p) => (
               <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <td className="px-5 py-4">
+                  <div className="w-12 h-12 bg-gold-muted relative overflow-hidden rounded">
+                    {p.images[0] ? (
+                      <Image src={p.images[0]} alt={p.name} fill className="object-cover" />
+                    ) : (
+                      <span className="font-serif text-xl text-gold opacity-20 flex items-center justify-center w-full h-full">BE</span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-5 py-4">
                   <div>
                     <p className="font-medium text-empire-black">{p.name}</p>
