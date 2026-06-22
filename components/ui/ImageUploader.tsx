@@ -3,6 +3,13 @@ import { CldUploadWidget, CloudinaryUploadWidgetResults } from "next-cloudinary"
 
 const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "").replace(/^"(.*)"$/, "$1");
 
+const widgetOptions = {
+  sources: ["local"],
+  singleUploadAutoClose: true,
+  maxFileSize: 5000000,
+  clientAllowedFormats: ["png", "jpg", "jpeg", "webp"],
+};
+
 interface ImageUploaderProps {
   value: string;
   onChange: (url: string) => void;
@@ -33,6 +40,7 @@ export function ImageUploader({ value, onChange }: ImageUploaderProps) {
       {uploadPreset ? (
         <CldUploadWidget
           uploadPreset={uploadPreset}
+          options={widgetOptions}
           onSuccess={(results: CloudinaryUploadWidgetResults) => {
             const info = results.info as any;
             if (info?.secure_url) onChange(info.secure_url);
@@ -74,6 +82,7 @@ export function MultiImageUploader({ values, onChange, max = 10 }: MultiImageUpl
         uploadPreset ? (
           <CldUploadWidget
             uploadPreset={uploadPreset}
+            options={widgetOptions}
             onSuccess={(results: CloudinaryUploadWidgetResults) => {
               const info = results.info as any;
               if (info?.secure_url) onChange([...values, info.secure_url]);
