@@ -4,7 +4,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bethelempire.com";
+function absUrl(url: string) {
+  if (url.startsWith("http")) return url;
+  const base = process.env.NEXT_PUBLIC_SITE_URL
+    || (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`)
+    || "https://bethelempire.com";
+  return `${base.replace(/\/+$/, "")}${url.startsWith("/") ? url : `/${url}`}`;
+}
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const post = await prisma.blogPost.findUnique({ where: { slug: params.slug, published: true } });
@@ -17,13 +23,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     openGraph: {
       title,
       description,
-      images: [{ url: `${siteUrl}/bethel-logo.jpg`, width: 800, height: 800, alt: "Bethel Empire" }],
+      images: [{ url: absUrl("/bethel-logo.jpg"), width: 800, height: 800, alt: "Bethel Empire" }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [`${siteUrl}/bethel-logo.jpg`],
+      images: [absUrl("/bethel-logo.jpg")],
     },
   };
 }
