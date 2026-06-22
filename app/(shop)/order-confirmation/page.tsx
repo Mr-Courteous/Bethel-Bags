@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import CartCountRefresher from "@/components/shop/CartCountRefresher";
 import PendingOrderRefresher from "@/components/shop/PendingOrderRefresher";
+import VerifyOnMount from "@/components/shop/VerifyOnMount";
 
 export const metadata: Metadata = { title: "Order Confirmed!" };
 
@@ -32,6 +33,9 @@ export default async function OrderConfirmationPage({
     <div>
       <CartCountRefresher />
       {isPending && <PendingOrderRefresher interval={5000} />}
+      {isPending && searchParams.ref && (
+        <VerifyOnMount orderNumber={searchParams.order} paystackRef={searchParams.ref} isPending={isPending} />
+      )}
       <section className="bg-empire-black py-16 relative">
         <div className="absolute top-0 left-0 right-0 h-0.5 gold-shimmer" />
         <div className="container-max px-4 sm:px-6 lg:px-8 text-center">

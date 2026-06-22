@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateReceiptPDF } from "@/lib/receipt";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: { orderNumber: string } }
@@ -41,11 +43,12 @@ export async function GET(
       paystackData as any
     );
 
-    return new NextResponse(new Blob([Buffer.from(pdfBuffer)], { type: "application/pdf" }), {
+    return new Response(Buffer.from(pdfBuffer), {
+      status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="receipt-${order.orderNumber}.pdf"`,
-        "Content-Length": String(pdfBuffer.length),
+        "Content-Length": String(pdfBuffer.byteLength),
       },
     });
   } catch (err) {

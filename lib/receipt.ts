@@ -155,7 +155,8 @@ export function generateReceiptPDF(order: OrderInfo, paystackData: ReceiptData):
 
   doc.end();
 
-  return new Uint8Array(Buffer.concat(chunks));
+  const raw = Buffer.concat(chunks);
+  return new Uint8Array(raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength));
 }
 
 function formatPrice(amount: number): string {

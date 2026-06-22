@@ -7,9 +7,9 @@ const CART_COOKIE = "be_cart_session";
 
 export async function POST(req: NextRequest) {
   try {
-    const { reference, orderId } = await req.json();
-    if (!reference || !orderId) {
-      return NextResponse.json({ error: "reference and orderId are required" }, { status: 400 });
+    const { reference, orderId, orderNumber } = await req.json();
+    if (!reference || (!orderId && !orderNumber)) {
+      return NextResponse.json({ error: "reference and orderId/orderNumber are required" }, { status: 400 });
     }
 
     // Verify with Paystack
@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Payment not confirmed by Paystack" }, { status: 400 });
     }
 
-    // Fetch order
+    // Fetch order by id or orderNumber
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: orderId ? { id: orderId } : { orderNumber: orderNumber! },
       include: { items: true },
     });
     if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
