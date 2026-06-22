@@ -1,6 +1,10 @@
 "use client";
 import { CldUploadWidget, CloudinaryUploadWidgetResults } from "next-cloudinary";
 
+const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "").replace(/^"(.*)"$/, "$1");
+const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "").replace(/^"(.*)"$/, "$1");
+const isConfigured = !!(uploadPreset && cloudName && !uploadPreset.includes("your-") && !cloudName.includes("your-"));
+
 interface ImageUploaderProps {
   value: string;
   onChange: (url: string) => void;
@@ -12,11 +16,23 @@ interface MultiImageUploaderProps {
   max?: number;
 }
 
+function SetupWarning() {
+  return (
+    <div className="bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">
+      <p className="font-medium mb-1">Cloudinary not configured</p>
+      <p>Set <code className="bg-yellow-100 px-1">NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME</code> and <code className="bg-yellow-100 px-1">NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET</code> in <code className="bg-yellow-100 px-1">.env.local</code>, then restart the dev server.</p>
+      <p className="text-xs mt-1">Need help? Create a free account at cloudinary.com → Settings → Upload → Add unsigned upload preset.</p>
+    </div>
+  );
+}
+
 export function ImageUploader({ value, onChange }: ImageUploaderProps) {
+  if (!isConfigured) return <SetupWarning />;
+
   return (
     <div>
       <CldUploadWidget
-        uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+        uploadPreset={uploadPreset}
         onSuccess={(results: CloudinaryUploadWidgetResults) => {
           const info = results.info as any;
           if (info?.secure_url) onChange(info.secure_url);
@@ -56,19 +72,23 @@ export function MultiImageUploader({ values, onChange, max = 10 }: MultiImageUpl
         ))}
       </div>
       {values.length < max && (
-        <CldUploadWidget
-          uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
-          onSuccess={(results: CloudinaryUploadWidgetResults) => {
-            const info = results.info as any;
-            if (info?.secure_url) onChange([...values, info.secure_url]);
-          }}
-        >
-          {({ open }) => (
-            <button type="button" onClick={() => open()} className="btn-outline text-sm">
-              {values.length === 0 ? "Upload Images" : "Add Another Image"}
-            </button>
-          )}
-        </CldUploadWidget>
+        isConfigured ? (
+          <CldUploadWidget
+            uploadPreset={uploadPreset}
+            onSuccess={(results: CloudinaryUploadWidgetResults) => {
+              const info = results.info as any;
+              if (info?.secure_url) onChange([...values, info.secure_url]);
+            }}
+          >
+            {({ open }) => (
+              <button type="button" onClick={() => open()} className="btn-outline text-sm">
+                {values.length === 0 ? "Upload Images" : "Add Another Image"}
+              </button>
+            )}
+          </CldUploadWidget>
+        ) : (
+          <SetupWarning />
+        )
       )}
     </div>
   );

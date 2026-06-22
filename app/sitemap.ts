@@ -4,11 +4,14 @@ import { prisma } from "@/lib/prisma";
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://bethelempire.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [products, posts, courses] = await Promise.all([
-    prisma.product.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }),
-    prisma.blogPost.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }),
-    prisma.course.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }),
-  ]);
+  let products: { slug: string; updatedAt: Date }[] = [];
+  let posts: { slug: string; updatedAt: Date }[] = [];
+  try {
+    [products, posts] = await Promise.all([
+      prisma.product.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }),
+      prisma.blogPost.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }),
+    ]);
+  } catch {} // DB unreachable — sitemap still works with static pages
 
   const staticPages = [
     { url: BASE_URL, priority: 1.0 },
