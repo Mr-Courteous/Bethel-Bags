@@ -21,7 +21,7 @@ export default function VerifyOnMount({
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
-          document.cookie = "be_cart_session=; Max-Age=0; path=/;";
+          fetch("/api/cart/clear", { method: "POST" }).catch(() => {});
           if ((window as any).__refreshCartCount) (window as any).__refreshCartCount();
         }
       })

@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import CartCountRefresher from "@/components/shop/CartCountRefresher";
 import PendingOrderRefresher from "@/components/shop/PendingOrderRefresher";
 import VerifyOnMount from "@/components/shop/VerifyOnMount";
+import DownloadReceiptButton from "@/components/shop/DownloadReceiptButton";
 
 export const metadata: Metadata = { title: "Order Confirmed!" };
 
@@ -25,9 +26,7 @@ export default async function OrderConfirmationPage({
 
   const isPending = order.status === "PENDING";
 
-  const receiptUrl = order.status === "PAID"
-    ? `/receipt/${order.orderNumber}`
-    : null;
+  const isPaid = order.status === "PAID";
 
   return (
     <div>
@@ -65,19 +64,9 @@ export default async function OrderConfirmationPage({
             <p className="text-xs text-gold tracking-widest uppercase mb-1">Order Number</p>
             <p className="font-mono font-bold text-white text-xl tracking-wider">{order.orderNumber}</p>
           </div>
-          {receiptUrl && (
+          {isPaid && (
             <div className="mt-4">
-              <a
-                href={receiptUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-gold hover:text-white border border-gold/40 hover:bg-gold/10 px-5 py-2 transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                View Receipt
-              </a>
+              <DownloadReceiptButton orderNumber={order.orderNumber} />
             </div>
           )}
         </div>
@@ -101,19 +90,7 @@ export default async function OrderConfirmationPage({
                   </div>
                 ))}
               </div>
-              {receiptUrl && (
-                <a
-                  href={receiptUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-1 text-xs text-gold hover:underline"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  View Receipt
-                </a>
-              )}
+              {isPaid && <DownloadReceiptButton orderNumber={order.orderNumber} />}
             </div>
 
             <div className="bg-white border border-gray-100 p-6">
