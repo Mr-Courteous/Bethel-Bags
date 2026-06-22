@@ -2,6 +2,7 @@
 import { CldUploadWidget, CloudinaryUploadWidgetResults } from "next-cloudinary";
 
 const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "").replace(/^"(.*)"$/, "$1");
+const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "").replace(/^"(.*)"$/, "$1");
 
 const widgetOptions = {
   sources: ["local" as const],
@@ -22,10 +23,10 @@ interface MultiImageUploaderProps {
 }
 
 function UploadButton({ label, onOpen }: { label: string; onOpen: () => void }) {
-  if (!uploadPreset) {
+  if (!uploadPreset || !cloudName) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
-        Set <code className="bg-yellow-100 px-1">NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET</code> in Vercel env vars and redeploy.
+        Set <code className="bg-yellow-100 px-1">NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME</code> and <code className="bg-yellow-100 px-1">NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET</code> in Vercel env vars, then redeploy.
       </div>
     );
   }
@@ -41,6 +42,7 @@ export function ImageUploader({ value, onChange }: ImageUploaderProps) {
         <CldUploadWidget
           uploadPreset={uploadPreset}
           options={widgetOptions}
+          config={{ cloud: { cloudName } }}
           onSuccess={(results: CloudinaryUploadWidgetResults) => {
             const info = results.info as any;
             if (info?.secure_url) onChange(info.secure_url);
@@ -83,6 +85,7 @@ export function MultiImageUploader({ values, onChange, max = 10 }: MultiImageUpl
           <CldUploadWidget
             uploadPreset={uploadPreset}
             options={widgetOptions}
+            config={{ cloud: { cloudName } }}
             onSuccess={(results: CloudinaryUploadWidgetResults) => {
               const info = results.info as any;
               if (info?.secure_url) onChange([...values, info.secure_url]);
