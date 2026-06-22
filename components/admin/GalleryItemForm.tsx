@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { ImageUploader } from "@/components/ui/ImageUploader";
 
 const CATEGORIES = ["Handbags", "Tote Bags", "Clutch Bags", "Backpacks", "Students' Work", "Behind the Scenes"];
 
@@ -19,7 +20,7 @@ export default function GalleryItemForm({ initialData }: { initialData?: any }) 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.image) return toast.error("Image URL is required");
+    if (!form.image) return toast.error("Please upload an image");
     setLoading(true);
     try {
       const res = await fetch("/api/admin/gallery", {
@@ -43,20 +44,15 @@ export default function GalleryItemForm({ initialData }: { initialData?: any }) 
     <form onSubmit={handleSubmit} className="max-w-xl">
       <div className="bg-white border border-gray-100 p-6 space-y-5">
         <div>
-          <label className="block text-xs tracking-widests uppercase text-empire-grey mb-2">Image URL *</label>
-          <input required value={form.image} onChange={(e) => set("image", e.target.value)} className="input-field" placeholder="https://res.cloudinary.com/..." />
-          {form.image && (
-            <div className="mt-3 w-32 h-32 bg-gold-muted overflow-hidden">
-              <img src={form.image} alt="Preview" className="w-full h-full object-cover" onError={(e) => { (e.target as any).style.display = "none"; }} />
-            </div>
-          )}
+          <label className="block text-xs tracking-widest uppercase text-empire-grey mb-2">Image *</label>
+          <ImageUploader value={form.image} onChange={(url) => set("image", url)} />
         </div>
         <div>
-          <label className="block text-xs tracking-widests uppercase text-empire-grey mb-2">Title</label>
+          <label className="block text-xs tracking-widest uppercase text-empire-grey mb-2">Title</label>
           <input value={form.title} onChange={(e) => set("title", e.target.value)} className="input-field" placeholder="Optional title" />
         </div>
         <div>
-          <label className="block text-xs tracking-widests uppercase text-empire-grey mb-2">Category</label>
+          <label className="block text-xs tracking-widest uppercase text-empire-grey mb-2">Category</label>
           <select value={form.category} onChange={(e) => set("category", e.target.value)} className="input-field">
             <option value="">No category</option>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}

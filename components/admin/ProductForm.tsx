@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Category } from "@prisma/client";
+import { MultiImageUploader } from "@/components/ui/ImageUploader";
 
 interface ProductFormProps {
   categories: Category[];
@@ -78,27 +79,10 @@ export default function ProductForm({ categories, initialData }: ProductFormProp
 
           <div className="bg-white border border-gray-100 p-6">
             <h3 className="font-serif text-lg text-empire-black mb-5">Images</h3>
-            <p className="text-sm text-empire-grey">Image upload via Cloudinary will be available after setup. For now, enter image URLs:</p>
-            <input
-              className="input-field mt-3"
-              placeholder="https://res.cloudinary.com/..."
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const val = (e.target as HTMLInputElement).value.trim();
-                  if (val) { set("images", [...form.images, val]); (e.target as HTMLInputElement).value = ""; }
-                }
-              }}
+            <MultiImageUploader
+              values={form.images}
+              onChange={(urls) => set("images", urls)}
             />
-            <p className="text-xs text-empire-grey mt-2">Press Enter to add each URL</p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              {form.images.map((img: string, i: number) => (
-                <div key={i} className="flex items-center gap-1 bg-gray-100 px-2 py-1 text-xs">
-                  <span className="truncate max-w-[180px]">{img}</span>
-                  <button type="button" onClick={() => set("images", form.images.filter((_: any, j: number) => j !== i))} className="text-red-500 ml-1">×</button>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 
