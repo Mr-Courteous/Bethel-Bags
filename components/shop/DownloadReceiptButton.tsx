@@ -1,11 +1,42 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { jsPDF } from "jspdf";
 import toast from "react-hot-toast";
+
+const GOLD = "#C9A84C";
+const DARK = "#1a1a1a";
+const GREY = "#666";
+
+function fmt(n: number) {
+  return `₦${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+}
+
+async function loadLogoBase64(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      resolve(c.toDataURL("image/jpeg"));
+    };
+    img.onerror = reject;
+    img.src = "/bethel-logo.jpg";
+  });
+}
 
 export default function DownloadReceiptButton({ orderNumber }: { orderNumber: string }) {
   const [loading, setLoading] = useState(false);
+  const logoRef = useRef<string | null>(null);
 
-  async function handleDownload() {
+  useEffect(() => {
+    loadLogoBase64().then((d) => { logoRef.current = d; }).catch(() => {});
+  }, []);
+
+  const handleDownload = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/orders/receipt?orderNumber=${orderNumber}`);
@@ -22,83 +53,155 @@ export default function DownloadReceiptButton({ orderNumber }: { orderNumber: st
         : "—";
       const bank = paystackData?.authorization?.bank || "—";
 
-      const fmt = (n: number) => `₦${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const pw = doc.internal.pageSize.getWidth();
+      let y = 15;
 
-      const html = `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>Receipt - ${order.orderNumber}</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Courier New', monospace; font-size: 13px; color: #000; padding: 40px; }
-  .receipt { max-width: 300px; margin: 0 auto; }
-  h1 { font-size: 20px; text-align: center; letter-spacing: 3px; margin-bottom: 2px; }
-  .sub { text-align: center; font-size: 10px; color: #555; margin-bottom: 15px; }
-  .divider { border-top: 1px dashed #000; margin: 12px 0; }
-  .row { display: flex; justify-content: space-between; margin-bottom: 3px; }
-  .label { color: #555; }
-  .right { text-align: right; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-  th { border-bottom: 1px dashed #000; padding: 4px 0; font-size: 11px; text-align: left; }
-  th:nth-child(2), th:nth-child(3) { text-align: right; }
-  td { padding: 4px 0; }
-  td:nth-child(2), td:nth-child(3) { text-align: right; }
-  .total { font-weight: bold; font-size: 16px; text-align: right; margin-top: 8px; }
-  .footer { text-align: center; font-size: 10px; color: #555; margin-top: 20px; }
-  .footer span { display: block; margin-bottom: 2px; }
-</style></head>
-<body>
-<div class="receipt">
-  <h1>BETHEL EMPIRE</h1>
-  <p class="sub">Premium Handcrafted Bags</p>
-  <div class="divider"></div>
-  <div class="row"><span class="label">Order</span><span>${order.orderNumber}</span></div>
-  <div class="row"><span class="label">Date</span><span>${paidAt}</span></div>
-  <div class="row"><span class="label">Status</span><span>PAID</span></div>
-  <div class="divider"></div>
-  <div class="row"><span class="label">Customer</span></div>
-  <div class="row"><span class="label">Name</span><span>${order.customerName}</span></div>
-  <div class="row"><span class="label">Email</span><span>${order.customerEmail}</span></div>
-  ${order.customerPhone ? `<div class="row"><span class="label">Phone</span><span>${order.customerPhone}</span></div>` : ""}
-  <div class="row"><span class="label">Address</span><span>${order.shippingAddress}, ${order.city}, ${order.state}</span></div>
-  <div class="divider"></div>
-  <table>
-    <thead><tr><th>Item</th><th>Qty</th><th>Amount</th></tr></thead>
-    <tbody>
-      ${order.items.map((i: any) => `<tr><td>${i.name}</td><td>${i.quantity}</td><td>${fmt(i.price * i.quantity)}</td></tr>`).join("")}
-    </tbody>
-  </table>
-  <div class="divider"></div>
-  <div class="total">Total: ${fmt(order.total)}</div>
-  <div class="divider"></div>
-  <div class="row"><span class="label">Reference</span><span style="font-size:11px">${order.paystackRef || "—"}</span></div>
-  <div class="row"><span class="label">Channel</span><span>${channel}</span></div>
-  <div class="row"><span class="label">Card</span><span>${cardInfo}</span></div>
-  <div class="row"><span class="label">Bank</span><span>${bank}</span></div>
-  ${paystackData?.id ? `<div class="row"><span class="label">Txn ID</span><span>#${paystackData.id}</span></div>` : ""}
-  ${paystackData?.fees != null ? `<div class="row"><span class="label">Fee</span><span>${fmt(paystackData.fees / 100)}</span></div>` : ""}
-  <div class="divider"></div>
-  <div class="footer">
-    <span>Thank you for choosing Bethel Empire!</span>
-    <span>contact@bethelempire.com</span>
-  </div>
-</div>
-</body></html>`;
+      const goldLine = (yy: number) => {
+        doc.setDrawColor(201, 168, 76);
+        doc.setLineWidth(0.5);
+        doc.line(15, yy, pw - 15, yy);
+      };
 
-      const blob = new Blob([html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `receipt-${order.orderNumber}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const sectionTitle = (title: string) => {
+        y += 4;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(26, 26, 26);
+        doc.text(title, 15, y);
+        y += 6;
+      };
+
+      const kv = (label: string, value: string, opts?: { mono?: boolean; color?: number[] }) => {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(102, 102, 102);
+        doc.text(label, 15, y);
+        doc.setFont(opts?.mono ? "courier" : "helvetica", "normal");
+        if (opts?.color) doc.setTextColor(opts.color[0], opts.color[1], opts.color[2]);
+        else doc.setTextColor(26, 26, 26);
+        doc.text(value, pw - 15, y, { align: "right" });
+        y += 5;
+      };
+
+      // ── Logo ──
+      if (logoRef.current) {
+        try {
+          doc.addImage(logoRef.current, "JPEG", pw / 2 - 15, y, 30, 30);
+          y += 34;
+        } catch { y += 4; }
+      } else {
+        y += 4;
+      }
+
+      // ── Header ──
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(201, 168, 76);
+      doc.text("BETHEL EMPIRE", pw / 2, y, { align: "center" });
+      y += 6;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(102, 102, 102);
+      doc.text("Premium Handcrafted Bags", pw / 2, y, { align: "center" });
+      y += 4;
+      doc.setFontSize(8);
+      doc.text("contact@bethelempire.com", pw / 2, y, { align: "center" });
+      y += 6;
+      goldLine(y);
+      y += 6;
+
+      // ── Title ──
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(26, 26, 26);
+      doc.text("PAYMENT RECEIPT", pw / 2, y, { align: "center" });
+      y += 8;
+
+      // ── Order Details ──
+      sectionTitle("ORDER DETAILS");
+      kv("Order Number:", order.orderNumber, { mono: true });
+      kv("Date:", paidAt);
+      kv("Status:", "PAID", { color: [22, 163, 74] });
+
+      // ── Customer ──
+      sectionTitle("CUSTOMER");
+      kv("Name:", order.customerName);
+      kv("Email:", order.customerEmail);
+      if (order.customerPhone) kv("Phone:", order.customerPhone);
+      kv("Address:", `${order.shippingAddress}, ${order.city}, ${order.state}`);
+
+      // ── Items Table ──
+      sectionTitle("ITEMS");
+      doc.setFillColor(245, 237, 214);
+      doc.rect(15, y - 3, pw - 30, 6, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(26, 26, 26);
+      doc.text("Item", 18, y + 1);
+      doc.text("Qty", 130, y + 1, { align: "center" });
+      doc.text("Price", 155, y + 1, { align: "right" });
+      doc.text("Total", 185, y + 1, { align: "right" });
+      y += 8;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      for (const item of order.items) {
+        const lines = doc.splitTextToSize(item.name || "", 110);
+        doc.setTextColor(26, 26, 26);
+        doc.text(lines[0], 18, y);
+        doc.setTextColor(102, 102, 102);
+        doc.text(String(item.quantity), 130, y, { align: "center" });
+        doc.text(fmt(item.price), 155, y, { align: "right" });
+        doc.text(fmt(item.price * item.quantity), 185, y, { align: "right" });
+        y += 5;
+      }
+
+      y += 2;
+      goldLine(y);
+      y += 5;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(26, 26, 26);
+      doc.text("Total Paid:", 140, y, { align: "right" });
+      doc.setTextColor(201, 168, 76);
+      doc.text(fmt(order.total), 195, y, { align: "right" });
+      y += 8;
+
+      // ── Payment Details ──
+      goldLine(y);
+      y += 5;
+      sectionTitle("PAYMENT DETAILS");
+      kv("Reference:", order.paystackRef || "—", { mono: true });
+      kv("Amount:", fmt(order.total));
+      kv("Currency:", paystackData?.currency || "NGN");
+      kv("Channel:", channel);
+      kv("Card:", cardInfo);
+      kv("Bank:", bank);
+      if (paystackData?.id) kv("Transaction ID:", `#${paystackData.id}`);
+      if (paystackData?.paid_at) kv("Paid At:", paystackData.paid_at ? new Date(paystackData.paid_at).toLocaleString("en-NG") : "—");
+      if (paystackData?.fees != null) kv("Transaction Fee:", fmt(paystackData.fees / 100));
+
+      // ── Footer ──
+      y = Math.max(y + 10, 270);
+      goldLine(y);
+      y += 5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(102, 102, 102);
+      doc.text("This is a computer-generated receipt. No signature required.", pw / 2, y, { align: "center" });
+      y += 4;
+      doc.text("Thank you for choosing Bethel Empire!", pw / 2, y, { align: "center" });
+
+      doc.save(`receipt-${order.orderNumber}.pdf`);
+
+      fetch("/api/cart/clear", { method: "POST" }).catch(() => {});
     } catch (err: any) {
       toast.error(err.message || "Failed to download receipt");
     } finally {
       setLoading(false);
     }
-  }
+  }, [orderNumber]);
 
   return (
     <button
@@ -107,10 +210,10 @@ export default function DownloadReceiptButton({ orderNumber }: { orderNumber: st
       disabled={loading}
       className="inline-flex items-center gap-2 text-sm text-gold hover:text-white border border-gold/40 hover:bg-gold/10 px-5 py-2 transition-colors disabled:opacity-50"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
       </svg>
-      {loading ? "Generating..." : "Download Receipt"}
+      {loading ? "Generating PDF..." : "Download Receipt"}
     </button>
   );
 }
