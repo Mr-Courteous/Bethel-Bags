@@ -86,6 +86,7 @@ export default function CheckoutClient() {
   const goToConfirmation = useCallback((orderNum: string, paystackRef: string) => {
     setStep("done");
     setSubmitting(false);
+    document.cookie = "be_cart_session=; Max-Age=0; path=/;";
     if ((window as any).__refreshCartCount) (window as any).__refreshCartCount();
     router.push(`/order-confirmation?order=${orderNum}&ref=${paystackRef}`);
   }, [router]);
@@ -250,6 +251,7 @@ export default function CheckoutClient() {
                     type="button"
                     onClick={() => {
                       setSubmitting(false);
+                      document.cookie = "be_cart_session=; Max-Age=0; path=/;";
                       if ((window as any).__refreshCartCount) (window as any).__refreshCartCount();
                       router.push(`/order-confirmation?order=${orderNumber}&ref=${paymentRef || ""}`);
                     }}

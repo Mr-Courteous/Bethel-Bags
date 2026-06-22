@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 export default function VerifyOnMount({
   orderNumber,
@@ -10,11 +10,8 @@ export default function VerifyOnMount({
   paystackRef: string;
   isPending: boolean;
 }) {
-  const called = useRef(false);
-
   useEffect(() => {
-    if (!isPending || !paystackRef || called.current) return;
-    called.current = true;
+    if (!isPending || !paystackRef) return;
 
     fetch("/api/orders/verify", {
       method: "POST",
@@ -23,8 +20,9 @@ export default function VerifyOnMount({
     })
       .then((r) => r.json())
       .then((data) => {
-        if (data.success && (window as any).__refreshCartCount) {
-          (window as any).__refreshCartCount();
+        if (data.success) {
+          document.cookie = "be_cart_session=; Max-Age=0; path=/;";
+          if ((window as any).__refreshCartCount) (window as any).__refreshCartCount();
         }
       })
       .catch(() => {});
