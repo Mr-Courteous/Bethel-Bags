@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { formatPrice } from "@/lib/utils";
 import Image from "next/image";
 import toast from "react-hot-toast";
@@ -36,7 +37,8 @@ export default function CheckoutClient() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<CheckoutStep>("details");
-  const [paystackRef, setPaystackRef] = useState("");
+  const [paystackReady, setPaystackReady] = useState(false);
+  const orderRef = useRef<{ id: string; number: string } | null>(null);
   const [form, setForm] = useState({
     customerName: "",
     customerEmail: "",
@@ -73,6 +75,13 @@ export default function CheckoutClient() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!cart?.items.length) return toast.error("Your cart is empty");
+
+    const PaystackPop = (window as any).PaystackPop;
+    if (!PaystackPop) {
+      toast.error("Payment system still loading. Please wait a moment and try again.");
+      return;
+    }
+
     setSubmitting(true);
     setStep("paying");
 
@@ -86,10 +95,7 @@ export default function CheckoutClient() {
       if (!orderRes.ok) throw new Error(orderData.error || "Failed to create order");
 
       const { order, paystackRef: ref } = orderData;
-      setPaystackRef(ref);
-
-      const PaystackPop = (window as any).PaystackPop;
-      if (!PaystackPop) throw new Error("Payment system not loaded. Please refresh and try again.");
+      orderRef.current = { id: order.id, number: order.orderNumber };
 
       const handler = PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
@@ -125,11 +131,13 @@ export default function CheckoutClient() {
               }, 600);
             } else {
               setStep("details");
+              setSubmitting(false);
               toast.error("Payment received but verification failed. Contact us with your payment reference.");
             }
           } catch {
             toast.dismiss();
             setStep("details");
+            setSubmitting(false);
             toast.error("Verification error. Please contact support with reference: " + response.reference);
           }
         },
@@ -163,7 +171,12 @@ export default function CheckoutClient() {
 
   return (
     <>
-      <script src="https://js.paystack.co/v1/inline.js" async />
+      <Script
+        src="https://js.paystack.co/v1/inline.js"
+        strategy="afterInteractive"
+        onLoad={() => setPaystackReady(true)}
+        onError={() => console.warn("Paystack script failed to load")}
+      />
 
       {/* Progress steps */}
       <div className="flex items-center justify-center gap-2 mb-10">
@@ -221,7 +234,7 @@ export default function CheckoutClient() {
           <div className="lg:col-span-3 space-y-6">
 
             {/* Contact */}
-            <div className={`border p-7 transition-colors ${form.customerName && form.customerEmail && form.customerPhone ? "bg-white border-gray-100" : "bg-white border-gray-100"}`}>
+            <div className="bg-white border border-gray-100 p-7">
               <h2 className="font-serif text-xl text-empire-black mb-5 flex items-center gap-2">
                 <span className="w-6 h-6 bg-gold text-empire-black text-xs font-bold flex items-center justify-center">1</span>
                 Contact Information
@@ -243,7 +256,7 @@ export default function CheckoutClient() {
             </div>
 
             {/* Shipping address */}
-            <div className={`border p-7 transition-colors ${form.state ? "bg-white border-gray-100" : "bg-white border-gray-100"}`}>
+            <div className="bg-white border border-gray-100 p-7">
               <h2 className="font-serif text-xl text-empire-black mb-5 flex items-center gap-2">
                 <span className="w-6 h-6 bg-gold text-empire-black text-xs font-bold flex items-center justify-center">2</span>
                 Delivery Address
@@ -285,7 +298,6 @@ export default function CheckoutClient() {
             <div className="bg-white border border-gray-100 p-7 sticky top-32">
               <h2 className="font-serif text-xl text-empire-black mb-6">Order Summary</h2>
 
-              {/* Items */}
               <div className="space-y-4 mb-6">
                 {cart.items.map((item) => (
                   <div key={item.id} className="flex gap-3">
@@ -312,7 +324,6 @@ export default function CheckoutClient() {
                 ))}
               </div>
 
-              {/* Totals */}
               <div className="border-t border-gray-100 pt-5 space-y-3 text-sm">
                 <div className="flex justify-between text-empire-grey">
                   <span>Subtotal</span>
@@ -339,6 +350,11 @@ export default function CheckoutClient() {
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-empire-black/30 border-t-empire-black rounded-full animate-spin" />
                     Processing...
+                  </span>
+                ) : !paystackReady ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-empire-black/30 border-t-empire-black rounded-full animate-spin" />
+                    Loading payment system...
                   </span>
                 ) : (
                   `Pay ${formatPrice(total)}`
